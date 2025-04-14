@@ -11,21 +11,21 @@ use Inertia\Inertia;
 
 class PostController extends Controller
 {
-    public function index()
-    {
-        $posts = Post::with(['user', 'tags', 'comments.user', 'likes'])
-            ->where(function($query) {
-                $query->where('visibility', 'public')
-                    ->orWhere('user_id', Auth::id());
-            })
-            ->latest()
-            ->paginate(10);
-
-        return Inertia::render('Posts/Index', [
-            'posts' => $posts,
-            'tags' => Tag::all()
-        ]);
-    }
+    // Optimize your queries (example for PostController):
+public function index()
+{
+    $posts = Post::with([
+        'user:id,username,profile_pic',
+        'tags:id,name',
+        'comments' => fn($q) => $q->limit(3)
+    ])
+    ->select('id', 'user_id', 'title', 'created_at')
+    ->where('visibility', 'public')
+    ->orderBy('created_at', 'desc')
+    ->simplePaginate(10); // Faster than regular pagination
+    
+    return Inertia::render('Posts/Index', ['posts' => $posts]);
+}
 
     public function store(PostRequest $request)
     {
